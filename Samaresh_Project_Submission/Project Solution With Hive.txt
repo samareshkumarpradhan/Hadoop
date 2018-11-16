@@ -1,0 +1,162 @@
+sudo -u hdfs hdfs dfsadmin -safemode leave
+=========================================================================
+CREATE TABLE IF NOT EXISTS channelinfo ( program String, channel String)
+COMMENT 'TV Channel details'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+
+CREATE TABLE IF NOT EXISTS programinfo ( program String, viewers Int)
+COMMENT 'TV Channel Viewers details'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+=========================================================================
+LOAD DATA LOCAL INPATH '/home/training/hive_training/project_data/join2_genchanA.txt'
+INTO TABLE channelinfo;
+
+LOAD DATA LOCAL INPATH '/home/training/hive_training/project_data/join2_genchanB.txt'
+INTO TABLE channelinfo;
+
+LOAD DATA LOCAL INPATH '/home/training/hive_training/project_data/join2_genchanC.txt'
+INTO TABLE channelinfo;
+
+LOAD DATA LOCAL INPATH '/home/training/hive_training/project_data/join2_gennumA.txt'
+INTO TABLE programinfo;
+
+LOAD DATA LOCAL INPATH '/home/training/hive_training/project_data/join2_gennumB.txt'
+INTO TABLE programinfo;
+
+LOAD DATA LOCAL INPATH '/home/training/hive_training/project_data/join2_gennumC.txt'
+INTO TABLE programinfo;
+=========================================================================
+Question - What is the total number of viewers for shows on ABC? 
+Answer - 1115974
+Solution-
+select sum(pi.viewers) toatl_viewers
+from channelinfo ci join programinfo pi
+on ci.program = pi.program
+where ci.channel ='ABC'; 
+=========================================================================
+Question - What is the total number of viewers for shows on ABC? 
+Answer - 5099141
+Solution-
+select sum(pi.viewers) toatl_viewers
+from channelinfo ci join programinfo pi
+on ci.program = pi.program
+where ci.channel ='BAT'; 
+=========================================================================
+
+Question - What is the number of viewers for the BAT channel?
+Solution -
+select ci.program, sum(pi.viewers) viewers
+from channelinfo ci join programinfo pi
+on ci.program = pi.program
+where ci.channel = 'BAT'
+group by ci.program; 
+Answer - 
+Almost_Cooking  49501
+Almost_Games    49237
+Almost_News     93184
+Almost_Show     50202
+Almost_Sports   98614
+Almost_Talking  202854
+Baked_Cooking   48994
+Baked_Games     51604
+Baked_News      94422
+Baked_Show      48413
+Baked_Sports    103572
+Baked_Talking   285309
+Cold_Cooking    51932
+Cold_Games      47524
+Cold_News       47924
+Cold_Sports     104010
+Cold_Talking    284943
+Dumb_Cooking    51647
+Dumb_Games      101192
+Dumb_News       104466
+Dumb_Show       107648
+Dumb_Talking    207788
+Hot_Cooking     51694
+Hot_Games       50228
+Hot_News        112378
+Hot_Show        54378
+Hot_Sports      98532
+Hot_Talking     197620
+Hourly_Cooking  54208
+Hourly_Games    108292
+Hourly_News     50604
+Hourly_Show     96566
+Hourly_Sports   54050
+Hourly_Talking  216326
+Loud_Cooking    48555
+Loud_Games      98964
+Loud_News       98332
+Loud_Show       50820
+Loud_Sports     48220
+Loud_Talking    204476
+PostModern_Cooking      50648
+PostModern_Games        50644
+PostModern_News 100042
+PostModern_Show 48775
+PostModern_Sports       100408
+PostModern_Talking      193636
+Surreal_Cooking 51880
+Surreal_Games   53681
+Surreal_Show    48462
+Surreal_Sports  93668
+Surreal_Talking 328074
+=========================================================================
+Question - What is the most viewed show on ABC channel?
+Answer - Hourly_Talking  108163
+Solution - 
+select ci.program, sum(pi.viewers) as viewers
+from channelinfo ci join programinfo pi
+on ci.program = pi.program
+where ci.channel = 'ABC'
+group by ci.program
+order by viewers desc
+limit 1;
+=========================================================================
+Question - What are the aired shows on ZOO,NOX, ABC channels ? 
+Answer - 
+NOX     Surreal_Talking 218716
+ABC     Hourly_Talking  108163
+
+select u.channel, u.program, u.viewers from
+(
+select ci.channel, ci.program, sum(pi.viewers) viewers
+from channelinfo ci join programinfo pi
+on ci.program = pi.program
+where ci.channel ='ZOO'
+group by ci.channel, ci.program
+order by viewers desc
+limit 1
+union all
+select ci.channel, ci.program, sum(pi.viewers) viewers
+from channelinfo ci join programinfo pi
+on ci.program = pi.program
+where ci.channel ='NOX'
+group by ci.channel, ci.program
+order by viewers desc
+limit 1
+union all
+select ci.channel, ci.program, sum(pi.viewers) viewers
+from channelinfo ci join programinfo pi
+on ci.program = pi.program
+where ci.channel ='ABC'
+group by ci.channel, ci.program
+order by viewers desc
+limit 1
+) u;
+=========================================================================
+Question - Considering all the Shows shown on ABC, which is the show that is telecast the most number of times across all channels?
+Answer - Hourly_Talking  19
+select ci.program program, count(*) count
+from channelinfo ci inner join (select distinct program from channelinfo where channel = 'ABC') a
+on ci.program = a.program
+group by ci.program
+order by count desc
+limit 1;
